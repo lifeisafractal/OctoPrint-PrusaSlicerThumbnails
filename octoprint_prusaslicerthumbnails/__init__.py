@@ -52,7 +52,7 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				'align_inline_thumbnail': False, 'inline_thumbnail_align_value': "left", 'state_panel_thumbnail': True,
 				'state_panel_thumbnail_scale_value': "100", 'resize_filelist': False, 'filelist_height': "306",
 				'scale_inline_thumbnail_position': False, 'sync_on_refresh': False, 'use_uploads_folder': False,
-				'relocate_progress': False}
+				'relocate_progress': False, 'exclude_thumbnails_from_backup': False}
 
 	# ~~ AssetPlugin mixin
 
@@ -385,6 +385,17 @@ class PrusaslicerthumbnailsPlugin(octoprint.plugin.SettingsPlugin,
 				{'name': "Release Candidate", 'branch': "rc", 'comittish': ["rc", "master"]}
 			], 'pip': "https://github.com/jneilliii/OctoPrint-PrusaSlicerThumbnails/archive/{target_version}.zip"}}
 
+	# ~~ Backup hook
+
+	def additional_backup_excludes(self, excludes, *args, **kwargs):
+		# this hook can get invoked from the CLI mixin which doesn't init _settings
+		if not hasattr(self, '_settings'):
+			self._settings = octoprint.plugin.plugin_settings_for_settings_plugin("prusaslicerthumbnails", self)
+
+		if self._settings.get_boolean(["exclude_thumbnails_from_backup"]):
+			return ["."]
+		return []
+
 
 __plugin_name__ = "Slicer Thumbnails"
 __plugin_pythoncompat__ = ">=2.7,<4"  # python 2 and 3
@@ -401,4 +412,5 @@ def __plugin_load__():
 		"octoprint.server.http.routes": __plugin_implementation__.route_hook,
 		"octoprint.server.api.before_request": __plugin_implementation__.hook_octoprint_server_api_before_request,
 		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
+		"octoprint.plugin.backup.additional_excludes": __plugin_implementation__.additional_backup_excludes,
 	}
